@@ -56,7 +56,7 @@ ${rawText.slice(0, 8000)}
 - skills는 기술 스택만 추출 (Java, Python, React 등)
 - weakPoints는 면접관 관점에서 질문할 만한 포인트 (경력 공백, 짧은 이직 주기, 모호한 성과 등) 최대 5개`;
 
-    const analysis = await generateJSON<ResumeAnalysis>(prompt);
+    const analysis = await generateJSON<ResumeAnalysis>(prompt, 30000);
 
     return Response.json({
       ...analysis,

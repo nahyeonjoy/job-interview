@@ -9,11 +9,11 @@ const model = genAI.getGenerativeModel({
   },
 });
 
-const TIMEOUT_MS = 15000;
+const DEFAULT_TIMEOUT_MS = 15000;
 
-export async function generateJSON<T>(prompt: string): Promise<T> {
+export async function generateJSON<T>(prompt: string, timeoutMs?: number): Promise<T> {
   const timeoutPromise = new Promise<never>((_, reject) =>
-    setTimeout(() => reject(new Error("Gemini API timeout")), TIMEOUT_MS)
+    setTimeout(() => reject(new Error("Gemini API timeout")), timeoutMs ?? DEFAULT_TIMEOUT_MS)
   );
 
   const apiPromise = model.generateContent(prompt).then((result) => {
