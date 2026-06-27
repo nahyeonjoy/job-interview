@@ -12,8 +12,10 @@ interface QuestionsResponse {
 
 export async function POST(request: NextRequest) {
   try {
-    const { company, position, interviewTypes, questionCount, resumeText, jdText } =
+    const { company, position, interviewTypes, questionCount, resumeText, jdText, experienceLevel } =
       await request.json();
+
+    const isExperienced = experienceLevel === "경력";
 
     const typeLabels: Record<string, string> = {
       tech: "기술 면접",
@@ -31,19 +33,49 @@ export async function POST(request: NextRequest) {
     let contextBlock = "";
 
     if (resumeText && jdText) {
-      contextBlock = `
+      if (isExperienced) {
+        contextBlock = `
+[지원자 이력서]
+${resumeText}
+
+[채용공고 요구사항]
+${jdText}
+
+이 지원자는 경력직입니다. 이력서를 중심으로 질문을 생성하세요:
+1. 이력서 프로젝트/경험 심화 질문 — 구체적 성과, 기술적 의사결정, 문제 해결 과정 (50%)
+2. JD 자격요건 대비 이력서 역량 검증 — 이력서 경험이 JD 요구사항에 부합하는지 (20%)
+3. 경력 공백/이직 사유/성과 수치 검증 질문 (15%)
+4. JD 우대사항 관련 질문 (15%)
+비율에 맞춰 질문을 생성하세요.
+이력서에 기재된 프로젝트명, 회사명, 기술 스택을 직접 언급하며 질문하세요.
+`;
+      } else {
+        contextBlock = `
 [채용공고 요구사항]
 ${jdText}
 
 [지원자 이력서]
 ${resumeText}
 
-채용공고의 요구사항과 지원자의 이력서를 대조하여:
-1. JD 자격요건 대비 지원자 역량 검증 질문 (40%)
-2. 이력서 프로젝트/경험 심화 질문 (30%)
-3. JD 우대사항 관련 질문 (20%)
-4. 경력 공백/이직 등 확인 질문 (10%)
+이 지원자는 신입/주니어입니다. JD 요구사항 중심으로 질문하세요:
+1. JD 자격요건 기반 기술/지식 검증 질문 (50%)
+2. 이력서 프로젝트/학습 경험 질문 (25%)
+3. JD 우대사항 관련 질문 (15%)
+4. 성장 가능성/학습 의지 확인 질문 (10%)
 비율에 맞춰 질문을 생성하세요.
+`;
+      }
+    } else if (resumeText) {
+      contextBlock = `
+[지원자 이력서]
+${resumeText}
+
+${isExperienced
+  ? `경력직 지원자입니다. 이력서에 기재된 경력, 프로젝트, 기술 스택을 중심으로 심화 질문을 생성하세요.
+각 프로젝트에서의 구체적 역할, 기술적 의사결정, 성과 수치, 문제 해결 경험을 깊이 파고드세요.
+경력 공백, 이직 사유 등도 포함하세요.
+이력서에 기재된 프로젝트명, 회사명을 직접 언급하며 질문하세요.`
+  : `이력서의 프로젝트, 학습 경험, 기술 스택을 기반으로 질문을 생성하세요.`}
 `;
     } else if (jdText) {
       contextBlock = `
@@ -51,14 +83,6 @@ ${resumeText}
 ${jdText}
 
 채용공고 요구사항을 기반으로 지원자의 역량을 검증할 수 있는 질문을 생성하세요.
-`;
-    } else if (resumeText) {
-      contextBlock = `
-[지원자 이력서]
-${resumeText}
-
-이력서의 경력, 프로젝트, 기술 스택을 기반으로 심화 질문을 생성하세요.
-경력 공백, 이직 사유, 성과 수치 검증 등도 포함하세요.
 `;
     }
 

@@ -118,6 +118,7 @@ export default function InterviewSessionPage() {
           questionCount: s.questionCount,
           resumeText: resumeText.slice(0, 5000),
           jdText: jdText.slice(0, 3000),
+          experienceLevel: s.experienceLevel || "경력",
         }),
       });
       clearTimeout(timeout);
