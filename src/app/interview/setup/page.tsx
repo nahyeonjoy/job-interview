@@ -493,28 +493,44 @@ export default function InterviewSetupPage() {
               </div>
 
               {/* 드롭다운 */}
-              {companySearchOpen && (
+              {companySearchOpen && companySearch.trim() && (
                 <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden max-h-52 overflow-y-auto">
-                  {filteredCompanies.length > 0 ? (
-                    filteredCompanies.map((c) => (
+                  {filteredCompanies.map((c) => (
+                    <button
+                      key={c.name}
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => {
+                        setCompany(c.name);
+                        setCompanySearch(c.name);
+                        setCompanySearchOpen(false);
+                      }}
+                      className="w-full px-4 py-3 text-left hover:bg-indigo-50 flex items-center justify-between text-sm transition-colors"
+                    >
+                      <span className="font-medium text-gray-900">{c.name}</span>
+                      <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-500 rounded-full">{c.type}</span>
+                    </button>
+                  ))}
+                  {!filteredCompanies.some((c) => c.name === companySearch.trim()) && (
+                    <>
+                      {filteredCompanies.length > 0 && (
+                        <div className="mx-3 border-t border-gray-100" />
+                      )}
                       <button
-                        key={c.name}
                         onMouseDown={(e) => e.preventDefault()}
                         onClick={() => {
-                          setCompany(c.name);
-                          setCompanySearch(c.name);
+                          const name = companySearch.trim();
+                          setCompany(name);
+                          setCompanySearch(name);
                           setCompanySearchOpen(false);
                         }}
-                        className="w-full px-4 py-3 text-left hover:bg-indigo-50 flex items-center justify-between text-sm transition-colors"
+                        className="w-full px-4 py-3 text-left hover:bg-indigo-50 flex items-center gap-2 text-sm transition-colors"
                       >
-                        <span className="font-medium text-gray-900">{c.name}</span>
-                        <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-500 rounded-full">{c.type}</span>
+                        <span className="w-5 h-5 flex items-center justify-center rounded-full bg-indigo-100 text-indigo-600 font-bold text-xs shrink-0">+</span>
+                        <span className="text-gray-500">
+                          <span className="font-medium text-gray-900">&quot;{companySearch.trim()}&quot;</span> 직접 입력
+                        </span>
                       </button>
-                    ))
-                  ) : (
-                    <div className="px-4 py-3 text-sm text-gray-400 text-center">
-                      검색 결과가 없습니다
-                    </div>
+                    </>
                   )}
                 </div>
               )}
