@@ -553,58 +553,67 @@ export default function InterviewSetupPage() {
         {/* JD URL */}
         <section>
           <label className="block text-sm font-semibold text-gray-900 mb-1">
-            채용 링크 (선택)
+            채용 링크 <span className="text-gray-400 font-normal">(선택)</span>
           </label>
           <p className="text-xs text-gray-400 mb-3">
             채용공고 URL을 입력하면 JD 기반 맞춤 질문을 생성합니다
           </p>
-          <div className="flex gap-2">
-            <input
-              type="url"
-              placeholder="https://careers.example.com/jobs/..."
-              value={jdUrl}
-              onChange={(e) => {
-                setJdUrl(e.target.value);
-                setJdData(null);
-                setJdError(null);
-              }}
-              className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
-            />
-            <button
-              onClick={handleJdAnalyze}
-              disabled={!jdUrl.trim() || jdLoading}
-              className="px-5 py-3 bg-primary text-white text-sm font-medium rounded-xl hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
-            >
-              {jdLoading ? "분석 중..." : "분석"}
-            </button>
-          </div>
+
+          {jdData ? (
+            /* 등록 완료 상태 */
+            <div className="flex items-center gap-2 px-4 py-3 bg-green-50 border border-green-200 rounded-xl">
+              <span className="text-green-500 text-base">✅</span>
+              <span className="text-sm font-medium text-green-900 flex-1 truncate">
+                {jdData.company && jdData.position
+                  ? `${jdData.company} · ${jdData.position}`
+                  : jdUrl}
+              </span>
+              <button
+                onClick={() => {
+                  setJdData(null);
+                  setJdUrl("");
+                  setJdError(null);
+                }}
+                className="w-5 h-5 flex items-center justify-center rounded-full bg-green-200 hover:bg-green-300 transition-colors shrink-0"
+              >
+                <svg className="w-3 h-3 text-green-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          ) : (
+            /* 입력 상태 */
+            <div className="relative">
+              <input
+                type="url"
+                placeholder="https://careers.example.com/jobs/..."
+                value={jdUrl}
+                onChange={(e) => {
+                  setJdUrl(e.target.value);
+                  setJdError(null);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && jdUrl.trim() && !jdLoading) handleJdAnalyze();
+                }}
+                className="w-full pl-4 pr-20 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
+              />
+              <button
+                onClick={handleJdAnalyze}
+                disabled={!jdUrl.trim() || jdLoading}
+                className="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-primary text-white text-xs font-medium rounded-lg hover:bg-primary-dark transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {jdLoading ? (
+                  <svg className="animate-spin h-3.5 w-3.5" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                ) : "등록"}
+              </button>
+            </div>
+          )}
+
           {jdError && (
             <p className="mt-2 text-sm text-red-600">{jdError}</p>
-          )}
-          {jdData && (
-            <div className="mt-3 p-4 bg-green-50 rounded-xl text-sm border border-green-200">
-              <p className="font-medium text-green-900 mb-2">
-                ✅ {jdData.company} - {jdData.position} JD 분석 완료
-              </p>
-              {jdData.requirements.length > 0 && (
-                <div className="mb-2">
-                  <span className="text-xs font-medium text-gray-600">자격요건:</span>
-                  <p className="text-xs text-gray-700 mt-0.5">
-                    {jdData.requirements.slice(0, 3).join(" / ")}
-                    {jdData.requirements.length > 3 && ` 외 ${jdData.requirements.length - 3}건`}
-                  </p>
-                </div>
-              )}
-              {jdData.preferred.length > 0 && (
-                <div>
-                  <span className="text-xs font-medium text-gray-600">우대사항:</span>
-                  <p className="text-xs text-gray-700 mt-0.5">
-                    {jdData.preferred.slice(0, 3).join(" / ")}
-                    {jdData.preferred.length > 3 && ` 외 ${jdData.preferred.length - 3}건`}
-                  </p>
-                </div>
-              )}
-            </div>
           )}
         </section>
 
