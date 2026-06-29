@@ -29,7 +29,7 @@ export interface InterviewSetup {
   jd?: JDData;
   coverLetterText?: string;
   interviewerCount: number;
-  interviewerRole: string;
+  interviewerRole: string[];
   interviewerGender: string;
   interviewerMood: string;
 }

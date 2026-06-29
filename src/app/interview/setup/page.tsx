@@ -24,9 +24,21 @@ export default function InterviewSetupPage() {
   const [positionSearch, setPositionSearch] = useState("");
   const [selectedTypes, setSelectedTypes] = useState<string[]>(["tech"]);
   const [interviewerCount, setInterviewerCount] = useState(1);
-  const [interviewerRole, setInterviewerRole] = useState("manager");
-  const [interviewerGender, setInterviewerGender] = useState("random");
+  const [interviewerRole, setInterviewerRole] = useState<string[]>(["manager"]);
+  const [interviewerGender, setInterviewerGender] = useState("mixed");
   const [interviewerMood, setInterviewerMood] = useState("standard");
+
+  const toggleInterviewerRole = (id: string) => {
+    if (interviewerCount === 1) {
+      setInterviewerRole([id]);
+      return;
+    }
+    setInterviewerRole((prev) => {
+      if (prev.includes(id)) return prev.filter((r) => r !== id);
+      if (prev.length >= interviewerCount) return prev;
+      return [...prev, id];
+    });
+  };
   const [mode, setMode] = useState<"time" | "count">("count");
   const [questionCount, setQuestionCount] = useState(10);
   const [timeMinutes, setTimeMinutes] = useState(30);
@@ -54,6 +66,10 @@ export default function InterviewSetupPage() {
     const r = loadState("resume");
     if (r) setResume(r);
   }, []);
+
+  useEffect(() => {
+    setInterviewerRole((prev) => prev.slice(0, interviewerCount));
+  }, [interviewerCount]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -807,25 +823,44 @@ export default function InterviewSetupPage() {
 
             {/* 역할 */}
             <div>
-              <p className="text-xs font-medium text-gray-500 mb-2">역할</p>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs font-medium text-gray-500">역할</p>
+                {interviewerCount > 1 && (
+                  <span className="text-xs text-gray-400">
+                    {interviewerRole.length}/{interviewerCount}명 선택
+                  </span>
+                )}
+              </div>
               <div className="grid grid-cols-2 gap-2">
-                {INTERVIEWER_ROLES.map((r) => (
-                  <button
-                    key={r.id}
-                    onClick={() => setInterviewerRole(r.id)}
-                    className={`p-3 rounded-xl text-left transition-all border-2 ${
-                      interviewerRole === r.id
-                        ? "border-primary bg-indigo-50"
-                        : "border-gray-200 hover:border-gray-300"
-                    }`}
-                  >
-                    <div className="flex items-center gap-2 mb-0.5">
-                      <span className="text-base">{r.icon}</span>
-                      <span className="text-sm font-medium text-gray-900">{r.label}</span>
-                    </div>
-                    <p className="text-xs text-gray-500 ml-6">{r.desc}</p>
-                  </button>
-                ))}
+                {INTERVIEWER_ROLES.map((r) => {
+                  const selected = interviewerRole.includes(r.id);
+                  const maxReached = !selected && interviewerRole.length >= interviewerCount;
+                  return (
+                    <button
+                      key={r.id}
+                      onClick={() => toggleInterviewerRole(r.id)}
+                      disabled={maxReached}
+                      className={`p-3 rounded-xl text-left transition-all border-2 ${
+                        selected
+                          ? "border-primary bg-indigo-50"
+                          : maxReached
+                          ? "border-gray-100 bg-gray-50 opacity-40 cursor-not-allowed"
+                          : "border-gray-200 hover:border-gray-300"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className="text-base">{r.icon}</span>
+                        <span className="text-sm font-medium text-gray-900">{r.label}</span>
+                        {selected && interviewerCount > 1 && (
+                          <span className="ml-auto w-4 h-4 rounded-full bg-primary flex items-center justify-center text-white text-xs font-bold">
+                            {interviewerRole.indexOf(r.id) + 1}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-500 ml-6">{r.desc}</p>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 

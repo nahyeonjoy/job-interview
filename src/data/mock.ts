@@ -27,16 +27,16 @@ export const POSITIONS = [
 ];
 
 export const INTERVIEWER_ROLES = [
-  { id: "peer",      icon: "👨‍💻", label: "개발자 동료", desc: "기술 심화·코드 설계 집중" },
-  { id: "manager",   icon: "👔",  label: "팀장",        desc: "기술 + 협업·문화 균형" },
-  { id: "executive", icon: "🏢",  label: "임원/CTO",    desc: "비전·성장·기여도 중심" },
-  { id: "hr",        icon: "🙋",  label: "HR 담당자",   desc: "인성·문화 적합성 중심" },
+  { id: "peer",      icon: "👨‍💻", label: "실무 동료",  desc: "기술 심화·코드 설계 집중" },
+  { id: "manager",   icon: "👔",  label: "팀장",       desc: "기술 + 협업·문화 균형" },
+  { id: "executive", icon: "🏢",  label: "임원/C레벨", desc: "비전·성장·기여도 중심" },
+  { id: "hr",        icon: "🙋",  label: "HR 담당자",  desc: "인성·문화 적합성 중심" },
 ];
 
 export const INTERVIEWER_GENDERS = [
   { id: "male",   label: "남성" },
   { id: "female", label: "여성" },
-  { id: "random", label: "랜덤" },
+  { id: "mixed",  label: "남성+여성" },
 ];
 
 export const INTERVIEWER_MOODS = [

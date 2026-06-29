@@ -53,7 +53,10 @@ export async function POST(request: NextRequest) {
    - 답변이 짧거나 핵심이 없으면: 반드시 꼬리질문 생성
    - ${moodGuides[interviewerMood] || moodGuides.standard}`;
 
-    const prompt = `당신은 ${company}의 ${position} 포지션 ${roleLabels[interviewerRole] || "면접관"}입니다.
+    const roles = Array.isArray(interviewerRole) ? interviewerRole : [interviewerRole];
+    const roleDesc = roles.map((r: string) => roleLabels[r] || r).join(", ");
+
+    const prompt = `당신은 ${company}의 ${position} 포지션 ${roleDesc || "면접관"}입니다.
 면접 유형: ${categoryLabels[category] || category} 면접
 ${resumeContext}
 질문: "${question}"

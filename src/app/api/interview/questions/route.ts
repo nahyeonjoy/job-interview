@@ -46,9 +46,12 @@ export async function POST(request: NextRequest) {
     };
     const genderLabel = interviewerGender === "male" ? "남성" : interviewerGender === "female" ? "여성" : "";
 
+    const roles = Array.isArray(interviewerRole) ? interviewerRole : [interviewerRole];
+    const roleDesc = roles.map((r: string) => roleLabels[r] || r).join(", ");
+
     const interviewerBlock = `
 [면접관 설정]
-- 역할: ${roleLabels[interviewerRole] || interviewerRole}
+- 역할: ${roleDesc}
 - 인원: ${interviewerCount}명${interviewerCount > 1 ? ` (면접관들이 번갈아 질문하는 구조)` : ""}
 ${genderLabel ? `- 성별: ${genderLabel}\n` : ""}- 분위기: ${moodLabels[interviewerMood] || interviewerMood}
 
