@@ -7,6 +7,9 @@ import {
   MOCK_COMPANIES,
   POSITIONS,
   INTERVIEW_TYPES,
+  INTERVIEWER_ROLES,
+  INTERVIEWER_GENDERS,
+  INTERVIEWER_MOODS,
 } from "@/data/mock";
 import type { ResumeData, JDData } from "@/store/interview";
 
@@ -20,6 +23,10 @@ export default function InterviewSetupPage() {
   const [position, setPosition] = useState("");
   const [positionSearch, setPositionSearch] = useState("");
   const [selectedTypes, setSelectedTypes] = useState<string[]>(["tech"]);
+  const [interviewerCount, setInterviewerCount] = useState(1);
+  const [interviewerRole, setInterviewerRole] = useState("manager");
+  const [interviewerGender, setInterviewerGender] = useState("random");
+  const [interviewerMood, setInterviewerMood] = useState("standard");
   const [mode, setMode] = useState<"time" | "count">("count");
   const [questionCount, setQuestionCount] = useState(10);
   const [timeMinutes, setTimeMinutes] = useState(30);
@@ -206,6 +213,10 @@ export default function InterviewSetupPage() {
       experienceLevel,
       jd: jdData || undefined,
       coverLetterText: coverLetterText || undefined,
+      interviewerCount,
+      interviewerRole,
+      interviewerGender,
+      interviewerMood,
     });
     router.push("/interview/session");
   };
@@ -764,6 +775,102 @@ export default function InterviewSetupPage() {
                 <p className="text-xs text-gray-500 ml-7">{t.desc}</p>
               </button>
             ))}
+          </div>
+        </section>
+
+        {/* Interviewer settings */}
+        <section>
+          <label className="block text-sm font-semibold text-gray-900 mb-4">
+            면접관 설정
+          </label>
+          <div className="space-y-5">
+
+            {/* 인원 */}
+            <div>
+              <p className="text-xs font-medium text-gray-500 mb-2">인원</p>
+              <div className="flex gap-2">
+                {[1, 2, 3].map((n) => (
+                  <button
+                    key={n}
+                    onClick={() => setInterviewerCount(n)}
+                    className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+                      interviewerCount === n
+                        ? "bg-primary text-white"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    }`}
+                  >
+                    {n}명
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* 역할 */}
+            <div>
+              <p className="text-xs font-medium text-gray-500 mb-2">역할</p>
+              <div className="grid grid-cols-2 gap-2">
+                {INTERVIEWER_ROLES.map((r) => (
+                  <button
+                    key={r.id}
+                    onClick={() => setInterviewerRole(r.id)}
+                    className={`p-3 rounded-xl text-left transition-all border-2 ${
+                      interviewerRole === r.id
+                        ? "border-primary bg-indigo-50"
+                        : "border-gray-200 hover:border-gray-300"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <span className="text-base">{r.icon}</span>
+                      <span className="text-sm font-medium text-gray-900">{r.label}</span>
+                    </div>
+                    <p className="text-xs text-gray-500 ml-6">{r.desc}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* 성별 */}
+            <div>
+              <p className="text-xs font-medium text-gray-500 mb-2">성별</p>
+              <div className="flex gap-2">
+                {INTERVIEWER_GENDERS.map((g) => (
+                  <button
+                    key={g.id}
+                    onClick={() => setInterviewerGender(g.id)}
+                    className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+                      interviewerGender === g.id
+                        ? "bg-primary text-white"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    }`}
+                  >
+                    {g.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* 분위기 */}
+            <div>
+              <p className="text-xs font-medium text-gray-500 mb-2">분위기</p>
+              <div className="grid grid-cols-3 gap-2">
+                {INTERVIEWER_MOODS.map((m) => (
+                  <button
+                    key={m.id}
+                    onClick={() => setInterviewerMood(m.id)}
+                    className={`p-3 rounded-xl text-center transition-all border-2 ${
+                      interviewerMood === m.id
+                        ? "border-primary bg-indigo-50"
+                        : "border-gray-200 hover:border-gray-300"
+                    }`}
+                  >
+                    <div className="text-xl mb-1">{m.icon}</div>
+                    <p className="text-sm font-medium text-gray-900">{m.label}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">{m.desc}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+
           </div>
         </section>
 

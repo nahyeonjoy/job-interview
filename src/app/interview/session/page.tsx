@@ -118,7 +118,12 @@ export default function InterviewSessionPage() {
           questionCount: s.questionCount,
           resumeText: resumeText.slice(0, 5000),
           jdText: jdText.slice(0, 3000),
+          coverLetterText: (s.coverLetterText || "").slice(0, 3000),
           experienceLevel: s.experienceLevel || "경력",
+          interviewerCount: s.interviewerCount ?? 1,
+          interviewerRole: s.interviewerRole ?? "manager",
+          interviewerGender: s.interviewerGender ?? "random",
+          interviewerMood: s.interviewerMood ?? "standard",
         }),
       });
       clearTimeout(timeout);
@@ -215,6 +220,8 @@ export default function InterviewSessionPage() {
           position: setup?.position,
           resumeText: loadState("resume")?.rawText?.slice(0, 3000) || "",
           experienceLevel: setup?.experienceLevel || "경력",
+          interviewerRole: setup?.interviewerRole ?? "manager",
+          interviewerMood: setup?.interviewerMood ?? "standard",
         }),
       });
       clearTimeout(analyzeTimeout);
