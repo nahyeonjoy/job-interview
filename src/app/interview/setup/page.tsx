@@ -41,7 +41,7 @@ export default function InterviewSetupPage() {
   };
   const [mode, setMode] = useState<"time" | "count">("count");
   const [questionCount, setQuestionCount] = useState(10);
-  const [timeMinutes, setTimeMinutes] = useState(30);
+  const [timeMinutes, setTimeMinutes] = useState(60);
 
   // Resume states
   const [resume, setResume] = useState<ResumeData | null>(null);
@@ -938,71 +938,41 @@ export default function InterviewSetupPage() {
           </div>
 
           {mode === "count" ? (
-            <div>
-              <input
-                type="range"
-                min={3}
-                max={20}
-                value={questionCount}
-                onChange={(e) => setQuestionCount(Number(e.target.value))}
-                className="w-full accent-[var(--primary)]"
-              />
-              <div className="flex justify-between text-xs text-gray-400 mt-1">
-                <span>3개</span>
-                <span className="text-primary font-semibold text-sm">
-                  {questionCount}개
-                </span>
-                <span>20개</span>
-              </div>
-              <div className="flex gap-2 mt-3">
-                {[5, 10, 15, 20].map((n) => (
-                  <button
-                    key={n}
-                    onClick={() => setQuestionCount(n)}
-                    className={`px-4 py-2 rounded-lg text-sm ${
-                      questionCount === n
-                        ? "bg-primary text-white"
-                        : "bg-gray-100 text-gray-600"
-                    }`}
-                  >
-                    {n}개
-                  </button>
-                ))}
-              </div>
+            <div className="flex gap-2">
+              {[10, 15, 20].map((n) => (
+                <button
+                  key={n}
+                  onClick={() => setQuestionCount(n)}
+                  className={`flex-1 py-3 rounded-xl text-sm font-medium transition-colors ${
+                    questionCount === n
+                      ? "bg-primary text-white"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  }`}
+                >
+                  {n}개
+                </button>
+              ))}
             </div>
           ) : (
-            <div>
-              <input
-                type="range"
-                min={10}
-                max={60}
-                step={5}
-                value={timeMinutes}
-                onChange={(e) => setTimeMinutes(Number(e.target.value))}
-                className="w-full accent-[var(--primary)]"
-              />
-              <div className="flex justify-between text-xs text-gray-400 mt-1">
-                <span>10분</span>
-                <span className="text-primary font-semibold text-sm">
-                  {timeMinutes}분
-                </span>
-                <span>60분</span>
-              </div>
-              <div className="flex gap-2 mt-3">
-                {[15, 30, 45, 60].map((n) => (
-                  <button
-                    key={n}
-                    onClick={() => setTimeMinutes(n)}
-                    className={`px-4 py-2 rounded-lg text-sm ${
-                      timeMinutes === n
-                        ? "bg-primary text-white"
-                        : "bg-gray-100 text-gray-600"
-                    }`}
-                  >
-                    {n}분
-                  </button>
-                ))}
-              </div>
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { value: 30,  label: "30분" },
+                { value: 60,  label: "1시간" },
+                { value: 90,  label: "1시간 30분" },
+                { value: 120, label: "2시간" },
+              ].map(({ value, label }) => (
+                <button
+                  key={value}
+                  onClick={() => setTimeMinutes(value)}
+                  className={`py-3 rounded-xl text-sm font-medium transition-colors ${
+                    timeMinutes === value
+                      ? "bg-primary text-white"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
             </div>
           )}
         </section>
