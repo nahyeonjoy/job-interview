@@ -27,6 +27,7 @@ export interface InterviewSetup {
   interviewerTone: string;
   experienceLevel: "신입" | "경력";
   jd?: JDData;
+  coverLetterText?: string;
 }
 
 export interface QuestionAnswer {

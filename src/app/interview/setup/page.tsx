@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { saveState, loadState } from "@/store/interview";
 import {
@@ -15,6 +15,8 @@ export default function InterviewSetupPage() {
   const [experienceLevel, setExperienceLevel] = useState<"신입" | "경력">("경력");
   const [company, setCompany] = useState("");
   const [companySearch, setCompanySearch] = useState("");
+  const [companySearchOpen, setCompanySearchOpen] = useState(false);
+  const companySearchRef = useRef<HTMLDivElement>(null);
   const [position, setPosition] = useState("");
   const [selectedTypes, setSelectedTypes] = useState<string[]>(["tech"]);
   const [mode, setMode] = useState<"time" | "count">("count");
@@ -27,6 +29,13 @@ export default function InterviewSetupPage() {
   const [resumeAnalyzing, setResumeAnalyzing] = useState(false);
   const [resumeError, setResumeError] = useState<string | null>(null);
 
+  // Cover letter states
+  const [coverLetterFile, setCoverLetterFile] = useState<File | null>(null);
+  const [coverLetterText, setCoverLetterText] = useState("");
+  const [coverLetterAnalyzing, setCoverLetterAnalyzing] = useState(false);
+  const [coverLetterError, setCoverLetterError] = useState<string | null>(null);
+  const [coverLetterUploaded, setCoverLetterUploaded] = useState(false);
+
   // JD states
   const [jdUrl, setJdUrl] = useState("");
   const [jdLoading, setJdLoading] = useState(false);
@@ -36,6 +45,16 @@ export default function InterviewSetupPage() {
   useEffect(() => {
     const r = loadState("resume");
     if (r) setResume(r);
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (companySearchRef.current && !companySearchRef.current.contains(e.target as Node)) {
+        setCompanySearchOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const filteredCompanies = MOCK_COMPANIES.filter((c) =>
@@ -89,6 +108,37 @@ export default function InterviewSetupPage() {
       setResumeError("이력서 분석 중 오류가 발생했습니다. 다시 시도하세요.");
     } finally {
       setResumeAnalyzing(false);
+    }
+  }, []);
+
+  const handleCoverLetterUpload = useCallback(async (file: File) => {
+    setCoverLetterFile(file);
+    setCoverLetterError(null);
+    setCoverLetterUploaded(false);
+    setCoverLetterAnalyzing(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch("/api/coverletter/extract", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+
+      if (data.error) {
+        setCoverLetterError(data.error);
+        return;
+      }
+
+      setCoverLetterText(data.rawText || "");
+      setCoverLetterUploaded(true);
+    } catch {
+      setCoverLetterError("자기소개서 업로드 중 오류가 발생했습니다. 다시 시도하세요.");
+    } finally {
+      setCoverLetterAnalyzing(false);
     }
   }, []);
 
@@ -154,6 +204,7 @@ export default function InterviewSetupPage() {
       interviewerTone: selectedCompany?.tone ?? "반격식",
       experienceLevel,
       jd: jdData || undefined,
+      coverLetterText: coverLetterText || undefined,
     });
     router.push("/interview/session");
   };
@@ -300,43 +351,177 @@ export default function InterviewSetupPage() {
           )}
         </section>
 
+        {/* Cover Letter Upload */}
+        <section>
+          <label className="block text-sm font-semibold text-gray-900 mb-1">
+            자기소개서 업로드 <span className="text-gray-400 font-normal">(선택)</span>
+          </label>
+          <p className="text-xs text-gray-400 mb-3">
+            자기소개서를 함께 업로드하면 내용 기반 맞춤 질문을 추가 생성합니다
+          </p>
+
+          {!coverLetterUploaded ? (
+            <div>
+              <label
+                className={`flex items-center justify-center gap-3 px-4 py-4 border-2 border-dashed rounded-xl cursor-pointer transition-colors ${
+                  coverLetterAnalyzing
+                    ? "border-indigo-300 bg-indigo-50"
+                    : "border-gray-300 hover:border-primary hover:bg-indigo-50"
+                }`}
+              >
+                <input
+                  type="file"
+                  accept=".pdf"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) handleCoverLetterUpload(f);
+                  }}
+                  disabled={coverLetterAnalyzing}
+                />
+                {coverLetterAnalyzing ? (
+                  <>
+                    <svg
+                      className="animate-spin h-5 w-5 text-primary"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                    >
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                    <span className="text-sm text-primary font-medium">
+                      {coverLetterFile?.name} 업로드 중...
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-2xl">📝</span>
+                    <span className="text-sm text-gray-600">
+                      PDF 자기소개서를 클릭하여 업로드
+                    </span>
+                  </>
+                )}
+              </label>
+              {coverLetterError && (
+                <p className="mt-2 text-sm text-red-600">{coverLetterError}</p>
+              )}
+            </div>
+          ) : (
+            <div className="p-4 bg-green-50 rounded-xl border border-green-200">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-sm">
+                  <span>📝</span>
+                  <span className="font-medium text-gray-900">{coverLetterFile?.name}</span>
+                  <span className="text-xs text-green-600 font-medium">업로드 완료</span>
+                </div>
+                <button
+                  onClick={() => {
+                    setCoverLetterFile(null);
+                    setCoverLetterText("");
+                    setCoverLetterUploaded(false);
+                    setCoverLetterError(null);
+                  }}
+                  className="text-xs text-red-500 hover:text-red-700"
+                >
+                  삭제
+                </button>
+              </div>
+            </div>
+          )}
+        </section>
+
         {/* Company */}
         <section>
           <label className="block text-sm font-semibold text-gray-900 mb-3">
             지원 회사
           </label>
-          <input
-            type="text"
-            placeholder="회사명을 검색하세요"
-            value={companySearch}
-            onChange={(e) => {
-              setCompanySearch(e.target.value);
-              setCompany("");
-            }}
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
-          />
-          {companySearch && !company && (
-            <div className="mt-2 border border-gray-200 rounded-xl overflow-hidden max-h-48 overflow-y-auto">
-              {filteredCompanies.map((c) => (
-                <button
-                  key={c.name}
-                  onClick={() => {
-                    setCompany(c.name);
-                    setCompanySearch(c.name);
-                  }}
-                  className="w-full px-4 py-3 text-left hover:bg-indigo-50 flex items-center justify-between text-sm"
+
+          {/* 선택된 회사 표시 */}
+          {company ? (
+            <div className="flex items-center gap-2 px-4 py-3 bg-indigo-50 border border-indigo-200 rounded-xl">
+              <span className="text-sm font-medium text-indigo-900 flex-1">{company}</span>
+              <button
+                onClick={() => {
+                  setCompany("");
+                  setCompanySearch("");
+                  setCompanySearchOpen(false);
+                }}
+                className="w-5 h-5 flex items-center justify-center rounded-full bg-indigo-200 hover:bg-indigo-300 transition-colors"
+              >
+                <svg className="w-3 h-3 text-indigo-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          ) : (
+            <div ref={companySearchRef} className="relative">
+              {/* 검색 입력 */}
+              <div className="relative">
+                <svg
+                  className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
                 >
-                  <span className="font-medium text-gray-900">{c.name}</span>
-                  <span className="text-xs text-gray-400">{c.type}</span>
-                </button>
-              ))}
-              {filteredCompanies.length === 0 && (
-                <div className="px-4 py-3 text-sm text-gray-400">
-                  검색 결과 없음
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
+                </svg>
+                <input
+                  type="text"
+                  placeholder="회사명을 검색하세요"
+                  value={companySearch}
+                  onChange={(e) => {
+                    setCompanySearch(e.target.value);
+                    setCompanySearchOpen(true);
+                  }}
+                  onFocus={() => setCompanySearchOpen(true)}
+                  className="w-full pl-9 pr-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
+                />
+                {companySearch && (
+                  <button
+                    onClick={() => {
+                      setCompanySearch("");
+                      setCompanySearchOpen(false);
+                    }}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 transition-colors"
+                  >
+                    <svg className="w-3 h-3 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                )}
+              </div>
+
+              {/* 드롭다운 */}
+              {companySearchOpen && (
+                <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden max-h-52 overflow-y-auto">
+                  {filteredCompanies.length > 0 ? (
+                    filteredCompanies.map((c) => (
+                      <button
+                        key={c.name}
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => {
+                          setCompany(c.name);
+                          setCompanySearch(c.name);
+                          setCompanySearchOpen(false);
+                        }}
+                        className="w-full px-4 py-3 text-left hover:bg-indigo-50 flex items-center justify-between text-sm transition-colors"
+                      >
+                        <span className="font-medium text-gray-900">{c.name}</span>
+                        <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-500 rounded-full">{c.type}</span>
+                      </button>
+                    ))
+                  ) : (
+                    <div className="px-4 py-3 text-sm text-gray-400 text-center">
+                      검색 결과가 없습니다
+                    </div>
+                  )}
                 </div>
               )}
             </div>
           )}
+
+          {/* 선택된 회사 인사이트 */}
           {selectedCompany && (
             <div className="mt-3 p-4 bg-indigo-50 rounded-xl text-sm">
               <p className="font-medium text-indigo-900">
