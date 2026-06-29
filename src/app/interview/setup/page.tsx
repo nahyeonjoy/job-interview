@@ -834,7 +834,7 @@ export default function InterviewSetupPage() {
               <div className="grid grid-cols-2 gap-2">
                 {INTERVIEWER_ROLES.map((r) => {
                   const selected = interviewerRole.includes(r.id);
-                  const maxReached = !selected && interviewerRole.length >= interviewerCount;
+                  const maxReached = interviewerCount > 1 && !selected && interviewerRole.length >= interviewerCount;
                   return (
                     <button
                       key={r.id}
