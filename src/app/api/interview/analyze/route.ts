@@ -9,7 +9,7 @@ interface AnalyzeResponse {
 
 export async function POST(request: NextRequest) {
   try {
-    const { question, answer, category, company, position, resumeText, experienceLevel } =
+    const { question, answer, category, company, position, resumeText, experienceLevel, interviewerRole, interviewerMood } =
       await request.json();
 
     const isExperienced = experienceLevel === "경력";
@@ -23,6 +23,18 @@ export async function POST(request: NextRequest) {
       pressure: "압박",
     };
 
+    const roleLabels: Record<string, string> = {
+      peer:      "개발자 동료(시니어)",
+      manager:   "팀장",
+      executive: "임원/CTO",
+      hr:        "HR 담당자",
+    };
+    const moodGuides: Record<string, string> = {
+      friendly: "꼬리질문은 부드럽게, 지원자가 더 잘 표현할 수 있도록 유도하는 방향으로 생성하세요.",
+      standard: "꼬리질문은 답변의 구체성이 부족한 부분을 자연스럽게 파고드세요.",
+      pressure: "꼬리질문은 날카롭게 작성하세요. 논리 허점, 수치 부재, 팀 기여도 과장 등을 직접 지적하며 압박하세요.",
+    };
+
     const resumeContext = resumeText && isExperienced
       ? `\n[지원자 이력서 요약]\n${resumeText}\n`
       : "";
@@ -33,13 +45,18 @@ export async function POST(request: NextRequest) {
    - 이력서에 적힌 기술 스택, 성과, 회사 경험을 구체적으로 언급하며 질문
    - "이력서에 ~라고 적으셨는데", "~ 프로젝트에서는 어떠셨나요" 등 이력서 참조 표현 사용
    - 답변이 빈약하면: 이력서 경험 기반으로 구체화 요청
-   - 답변이 좋으면: 이력서의 관련 경험으로 심화 질문`
+   - 답변이 좋으면: 이력서의 관련 경험으로 심화 질문
+   - ${moodGuides[interviewerMood] || moodGuides.standard}`
       : `3. 꼬리질문: 답변 내용을 기반으로 꼬리질문 생성.
    - 답변이 빈약하면: 구체화 요청 질문
    - 답변이 좋으면: 심화 질문
-   - 답변이 짧거나 핵심이 없으면: 반드시 꼬리질문 생성`;
+   - 답변이 짧거나 핵심이 없으면: 반드시 꼬리질문 생성
+   - ${moodGuides[interviewerMood] || moodGuides.standard}`;
 
-    const prompt = `당신은 ${company}의 ${position} 포지션 면접관입니다.
+    const roles = Array.isArray(interviewerRole) ? interviewerRole : [interviewerRole];
+    const roleDesc = roles.map((r: string) => roleLabels[r] || r).join(", ");
+
+    const prompt = `당신은 ${company}의 ${position} 포지션 ${roleDesc || "면접관"}입니다.
 면접 유형: ${categoryLabels[category] || category} 면접
 ${resumeContext}
 질문: "${question}"

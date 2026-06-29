@@ -12,8 +12,11 @@ interface QuestionsResponse {
 
 export async function POST(request: NextRequest) {
   try {
-    const { company, position, interviewTypes, questionCount, resumeText, jdText, experienceLevel } =
-      await request.json();
+    const {
+      company, position, interviewTypes, questionCount,
+      resumeText, jdText, coverLetterText, experienceLevel,
+      interviewerCount, interviewerRole, interviewerGender, interviewerMood,
+    } = await request.json();
 
     const isExperienced = experienceLevel === "경력";
 
@@ -29,6 +32,35 @@ export async function POST(request: NextRequest) {
     const typeNames = (interviewTypes as string[])
       .map((t) => typeLabels[t] || t)
       .join(", ");
+
+    const roleLabels: Record<string, string> = {
+      peer:      "개발자 동료(시니어) — 기술 심화, 코드 설계, 트레이드오프 집중",
+      manager:   "팀장 — 기술 역량과 협업·문화 적합성을 균형 있게 평가",
+      executive: "임원/CTO — 비전, 성장 가능성, 회사 기여도 중심",
+      hr:        "HR 담당자 — 인성, 문화 적합성, 이직 사유 중심",
+    };
+    const moodLabels: Record<string, string> = {
+      friendly: "우호적 — 편안한 대화형, 지원자가 긴장을 풀도록 유도",
+      standard: "표준형 — 일반적인 구조화 면접, 중립적 태도",
+      pressure: "압박형 — 날카로운 꼬리질문, 논리 허점 공략, 불편한 질문도 서슴지 않음",
+    };
+    const genderLabel = interviewerGender === "male" ? "남성" : interviewerGender === "female" ? "여성" : "";
+
+    const roles = Array.isArray(interviewerRole) ? interviewerRole : [interviewerRole];
+    const roleDesc = roles.map((r: string) => roleLabels[r] || r).join(", ");
+
+    const interviewerBlock = `
+[면접관 설정]
+- 역할: ${roleDesc}
+- 인원: ${interviewerCount}명${interviewerCount > 1 ? ` (면접관들이 번갈아 질문하는 구조)` : ""}
+${genderLabel ? `- 성별: ${genderLabel}\n` : ""}- 분위기: ${moodLabels[interviewerMood] || interviewerMood}
+
+이 면접관 설정에 맞게 질문의 톤과 깊이를 조절하세요.
+`;
+
+    const coverLetterBlock = coverLetterText
+      ? `\n[지원자 자기소개서]\n${coverLetterText}\n`
+      : "";
 
     let contextBlock = "";
 
@@ -94,7 +126,7 @@ ${jdText}
 
     const prompt = `당신은 ${company}의 ${position} 포지션 면접관입니다.
 다음 유형의 면접 질문을 총 ${questionCount}개 생성하세요: ${typeNames}
-${contextBlock}
+${interviewerBlock}${coverLetterBlock}${contextBlock}
 요구사항:
 - 각 질문은 해당 회사와 직무에 맞춰 구체적이고 실무적이어야 합니다
 - 질문 유형별로 골고루 분배하세요

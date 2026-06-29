@@ -27,6 +27,11 @@ export interface InterviewSetup {
   interviewerTone: string;
   experienceLevel: "신입" | "경력";
   jd?: JDData;
+  coverLetterText?: string;
+  interviewerCount: number;
+  interviewerRole: string[];
+  interviewerGender: string;
+  interviewerMood: string;
 }
 
 export interface QuestionAnswer {

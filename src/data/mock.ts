@@ -26,6 +26,25 @@ export const POSITIONS = [
   "서비스 기획자",
 ];
 
+export const INTERVIEWER_ROLES = [
+  { id: "peer",      icon: "👨‍💻", label: "실무 동료",  desc: "기술 심화·코드 설계 집중" },
+  { id: "manager",   icon: "👔",  label: "팀장",       desc: "기술 + 협업·문화 균형" },
+  { id: "executive", icon: "🏢",  label: "임원/C레벨", desc: "비전·성장·기여도 중심" },
+  { id: "hr",        icon: "🙋",  label: "HR 담당자",  desc: "인성·문화 적합성 중심" },
+];
+
+export const INTERVIEWER_GENDERS = [
+  { id: "male",   label: "남성" },
+  { id: "female", label: "여성" },
+  { id: "mixed",  label: "남성+여성" },
+];
+
+export const INTERVIEWER_MOODS = [
+  { id: "friendly", icon: "🙂", label: "우호적", desc: "편안한 대화형" },
+  { id: "standard", icon: "😐", label: "표준형", desc: "일반적인 구조화" },
+  { id: "pressure", icon: "😤", label: "압박형", desc: "꼬리질문 강도 높음" },
+];
+
 export const INTERVIEW_TYPES = [
   { id: "tech", label: "기술 면접", desc: "코딩, 시스템 설계, 기술 지식 검증" },
   { id: "job", label: "직무 면접", desc: "실무 경험, 프로젝트 수행 역량 검증" },
