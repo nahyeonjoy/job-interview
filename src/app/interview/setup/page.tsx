@@ -18,6 +18,7 @@ export default function InterviewSetupPage() {
   const [companySearchOpen, setCompanySearchOpen] = useState(false);
   const companySearchRef = useRef<HTMLDivElement>(null);
   const [position, setPosition] = useState("");
+  const [positionSearch, setPositionSearch] = useState("");
   const [selectedTypes, setSelectedTypes] = useState<string[]>(["tech"]);
   const [mode, setMode] = useState<"time" | "count">("count");
   const [questionCount, setQuestionCount] = useState(10);
@@ -622,21 +623,98 @@ export default function InterviewSetupPage() {
           <label className="block text-sm font-semibold text-gray-900 mb-3">
             지원 직무
           </label>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-            {POSITIONS.map((p) => (
+
+          {/* 선택된 직무 태그 */}
+          {position && (
+            <div className="flex items-center gap-2 px-4 py-3 mb-3 bg-indigo-50 border border-indigo-200 rounded-xl">
+              <span className="text-sm font-medium text-indigo-900 flex-1">{position}</span>
               <button
-                key={p}
-                onClick={() => setPosition(p)}
-                className={`px-4 py-3 rounded-xl text-sm font-medium transition-colors ${
-                  position === p
-                    ? "bg-primary text-white"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                }`}
+                onClick={() => {
+                  setPosition("");
+                  setPositionSearch("");
+                }}
+                className="w-5 h-5 flex items-center justify-center rounded-full bg-indigo-200 hover:bg-indigo-300 transition-colors"
               >
-                {p}
+                <svg className="w-3 h-3 text-indigo-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
-            ))}
+            </div>
+          )}
+
+          {/* 검색 입력 */}
+          <div className="relative mb-3">
+            <svg
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
+              fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
+            </svg>
+            <input
+              type="text"
+              placeholder="직무를 검색하거나 직접 입력하세요"
+              value={positionSearch}
+              onChange={(e) => setPositionSearch(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && positionSearch.trim()) {
+                  setPosition(positionSearch.trim());
+                  setPositionSearch("");
+                }
+              }}
+              className="w-full pl-9 pr-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
+            />
           </div>
+
+          {/* 빠른 선택 칩 */}
+          {(() => {
+            const filtered = POSITIONS.filter((p) =>
+              p.includes(positionSearch.trim())
+            );
+            const showDirect =
+              positionSearch.trim() &&
+              !POSITIONS.some((p) => p === positionSearch.trim());
+            return (
+              <>
+                {filtered.length > 0 && (
+                  <>
+                    <p className="text-xs text-gray-400 mb-2">빠른 선택</p>
+                    <div className="flex flex-wrap gap-2">
+                      {filtered.map((p) => (
+                        <button
+                          key={p}
+                          onClick={() => {
+                            setPosition(p);
+                            setPositionSearch("");
+                          }}
+                          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                            position === p
+                              ? "bg-primary text-white"
+                              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                          }`}
+                        >
+                          {p}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+                {showDirect && (
+                  <button
+                    onClick={() => {
+                      setPosition(positionSearch.trim());
+                      setPositionSearch("");
+                    }}
+                    className="mt-2 flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  >
+                    <span className="w-4 h-4 flex items-center justify-center rounded-full bg-indigo-100 text-indigo-600 font-bold text-xs">+</span>
+                    <span className="text-gray-500">
+                      <span className="font-medium text-gray-900">&quot;{positionSearch.trim()}&quot;</span> 직접 입력
+                    </span>
+                  </button>
+                )}
+              </>
+            );
+          })()}
         </section>
 
         {/* Interview type */}
