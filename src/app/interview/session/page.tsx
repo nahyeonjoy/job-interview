@@ -213,6 +213,8 @@ export default function InterviewSessionPage() {
           category: currentQuestion.cat,
           company: setup?.company,
           position: setup?.position,
+          resumeText: loadState("resume")?.rawText?.slice(0, 3000) || "",
+          experienceLevel: setup?.experienceLevel || "경력",
         }),
       });
       clearTimeout(analyzeTimeout);

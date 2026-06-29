@@ -9,8 +9,10 @@ interface AnalyzeResponse {
 
 export async function POST(request: NextRequest) {
   try {
-    const { question, answer, category, company, position } =
+    const { question, answer, category, company, position, resumeText, experienceLevel } =
       await request.json();
+
+    const isExperienced = experienceLevel === "경력";
 
     const categoryLabels: Record<string, string> = {
       tech: "기술",
@@ -21,9 +23,25 @@ export async function POST(request: NextRequest) {
       pressure: "압박",
     };
 
+    const resumeContext = resumeText && isExperienced
+      ? `\n[지원자 이력서 요약]\n${resumeText}\n`
+      : "";
+
+    const followUpGuide = resumeText && isExperienced
+      ? `3. 꼬리질문: 반드시 이력서 내용과 연결하여 꼬리질문을 생성하세요.
+   - 답변에서 언급한 경험을 이력서의 다른 프로젝트/경력과 연결하여 질문
+   - 이력서에 적힌 기술 스택, 성과, 회사 경험을 구체적으로 언급하며 질문
+   - "이력서에 ~라고 적으셨는데", "~ 프로젝트에서는 어떠셨나요" 등 이력서 참조 표현 사용
+   - 답변이 빈약하면: 이력서 경험 기반으로 구체화 요청
+   - 답변이 좋으면: 이력서의 관련 경험으로 심화 질문`
+      : `3. 꼬리질문: 답변 내용을 기반으로 꼬리질문 생성.
+   - 답변이 빈약하면: 구체화 요청 질문
+   - 답변이 좋으면: 심화 질문
+   - 답변이 짧거나 핵심이 없으면: 반드시 꼬리질문 생성`;
+
     const prompt = `당신은 ${company}의 ${position} 포지션 면접관입니다.
 면접 유형: ${categoryLabels[category] || category} 면접
-
+${resumeContext}
 질문: "${question}"
 지원자 답변: "${answer}"
 
@@ -31,10 +49,7 @@ export async function POST(request: NextRequest) {
 
 1. 점수 (1-10): 답변의 구체성, 논리성, 직무 관련성, STAR 구조 적용 여부 고려
 2. 피드백: 2-3문장으로 강점과 개선점 포함. 한국어로 작성.
-3. 꼬리질문: 답변 내용을 기반으로 꼬리질문 생성.
-   - 답변이 빈약하면: 구체화 요청 질문
-   - 답변이 좋으면: 심화 질문
-   - 답변이 짧거나 핵심이 없으면: 반드시 꼬리질문 생성
+${followUpGuide}
 
 JSON 형식으로 응답하세요:
 {
