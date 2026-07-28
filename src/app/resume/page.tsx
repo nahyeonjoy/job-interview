@@ -62,11 +62,13 @@ export default function ResumePage() {
       saveState("resume", result);
       setAnalyzed(true);
     } catch (err) {
+      const detail = err instanceof Error ? err.message : String(err);
       const message =
         err instanceof Error && err.message.includes("timeout")
           ? "AI 분석 시간이 초과되었습니다. 다시 시도하세요."
-          : "이력서 분석에 실패했습니다.";
+          : `이력서 분석에 실패했습니다. (${detail})`;
       setError(message);
+      console.error("Resume analysis failed:", err);
     } finally {
       setAnalyzing(false);
     }

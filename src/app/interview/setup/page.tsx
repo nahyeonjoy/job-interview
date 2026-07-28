@@ -125,11 +125,13 @@ export default function InterviewSetupPage() {
       setResume(result);
       saveState("resume", result);
     } catch (err) {
+      const detail = err instanceof Error ? err.message : String(err);
       const message =
         err instanceof Error && err.message.includes("timeout")
           ? "AI 분석 시간이 초과되었습니다. 다시 시도하세요."
-          : "이력서 분석에 실패했습니다.";
+          : `이력서 분석에 실패했습니다. (${detail})`;
       setResumeError(message);
+      console.error("Resume analysis failed:", err);
     } finally {
       setResumeAnalyzing(false);
     }
@@ -151,8 +153,10 @@ export default function InterviewSetupPage() {
 
       setCoverLetterText(rawText.slice(0, 8000));
       setCoverLetterUploaded(true);
-    } catch {
-      setCoverLetterError("자기소개서 업로드 중 오류가 발생했습니다. 다시 시도하세요.");
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : String(err);
+      setCoverLetterError(`자기소개서 업로드 중 오류가 발생했습니다. (${detail})`);
+      console.error("Cover letter extraction failed:", err);
     } finally {
       setCoverLetterAnalyzing(false);
     }
@@ -197,8 +201,10 @@ export default function InterviewSetupPage() {
         );
         if (match) setPosition(match);
       }
-    } catch {
-      setJdError("채용공고 분석 중 오류가 발생했습니다.");
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : String(err);
+      setJdError(`채용공고 분석 중 오류가 발생했습니다. (${detail})`);
+      console.error("JD analysis failed:", err);
     } finally {
       setJdLoading(false);
     }
