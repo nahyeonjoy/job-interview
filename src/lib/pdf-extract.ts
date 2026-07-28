@@ -34,7 +34,11 @@ export async function extractPdfText(file: File): Promise<string> {
   const workerUrl = new URL(workerPath, window.location.href).toString();
   // Invoke via an IIFE rather than by name: minification may rename the
   // function, so referencing it by its original identifier here would throw.
-  const shimSource = `(${polyfillUint8ArrayToHex.toString()})();\nawait import(${JSON.stringify(workerUrl)});`;
+  // Use a static import (not dynamic import()) for the real worker script:
+  // some browsers (older/mobile Safari) support module workers but not
+  // dynamic import() from inside one, and a static import with a literal
+  // specifier works everywhere a module worker itself works.
+  const shimSource = `(${polyfillUint8ArrayToHex.toString()})();\nimport ${JSON.stringify(workerUrl)};`;
   const shimBlob = new Blob([shimSource], { type: "text/javascript" });
   pdfjsLib.GlobalWorkerOptions.workerSrc = URL.createObjectURL(shimBlob);
 
