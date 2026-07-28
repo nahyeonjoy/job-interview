@@ -136,7 +136,7 @@ export default function InterviewResultPage() {
   if (!result) return null;
 
   return (
-    <div className="flex flex-col h-[calc(100vh-64px)]">
+    <div className="flex flex-col h-[calc(100vh-64px)] print:h-auto">
       {/* Header */}
       <div className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between shrink-0">
         <div>
@@ -149,8 +149,11 @@ export default function InterviewResultPage() {
             })}
           </p>
         </div>
-        <div className="flex gap-2">
-          <button className="px-4 py-2 bg-gray-100 text-gray-700 text-sm rounded-lg hover:bg-gray-200">
+        <div className="flex gap-2 print:hidden">
+          <button
+            onClick={() => window.print()}
+            className="px-4 py-2 bg-gray-100 text-gray-700 text-sm rounded-lg hover:bg-gray-200"
+          >
             PDF 저장
           </button>
           <button
@@ -163,7 +166,7 @@ export default function InterviewResultPage() {
       </div>
 
       {/* Chat area */}
-      <div className="flex-1 overflow-y-auto px-4 py-6 bg-gray-50">
+      <div className="flex-1 overflow-y-auto px-4 py-6 bg-gray-50 print:flex-none print:overflow-visible print:h-auto">
         <div className="max-w-2xl mx-auto space-y-4">
           {messages.map((msg, i) => (
             <div
@@ -219,7 +222,7 @@ export default function InterviewResultPage() {
       </div>
 
       {/* Input */}
-      <div className="bg-white border-t border-gray-200 px-4 py-3 shrink-0">
+      <div className="bg-white border-t border-gray-200 px-4 py-3 shrink-0 print:hidden">
         <div className="max-w-2xl mx-auto flex gap-2">
           <input
             type="text"
