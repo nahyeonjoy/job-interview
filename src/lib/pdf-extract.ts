@@ -23,10 +23,15 @@ export async function extractPdfText(file: File): Promise<string> {
   polyfillUint8ArrayToHex();
 
   const pdfjsLib = await import("pdfjs-dist");
-  const workerUrl = new URL(
+  // Turbopack resolves this to a root-relative path (e.g. "/job-interview/...").
+  // That's a valid Worker() argument (resolved against the page), but dynamic
+  // import() inside the blob-URL shim below resolves against the blob itself,
+  // not the page, so it must be made fully absolute first.
+  const workerPath = new URL(
     "pdfjs-dist/build/pdf.worker.min.mjs",
     import.meta.url
   ).toString();
+  const workerUrl = new URL(workerPath, window.location.href).toString();
   // Invoke via an IIFE rather than by name: minification may rename the
   // function, so referencing it by its original identifier here would throw.
   const shimSource = `(${polyfillUint8ArrayToHex.toString()})();\nawait import(${JSON.stringify(workerUrl)});`;
