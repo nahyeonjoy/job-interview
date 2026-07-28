@@ -76,6 +76,16 @@ export interface InterviewResult {
 
 const STORAGE_KEY = "myeonjeob-i-state";
 
+// This module's top-level code only re-runs on an actual browser page
+// load/refresh, not on in-app client-side navigation between routes
+// (which reuses the already-loaded module). So clearing here means a
+// hard refresh always starts from a clean slate, while moving between
+// steps of the same flow (resume -> setup -> session -> result) still
+// carries data forward as intended.
+if (typeof window !== "undefined") {
+  sessionStorage.removeItem(STORAGE_KEY);
+}
+
 interface AppState {
   resume: ResumeData | null;
   setup: InterviewSetup | null;
