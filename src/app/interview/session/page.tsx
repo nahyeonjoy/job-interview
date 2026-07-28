@@ -7,6 +7,7 @@ import { MOCK_QUESTIONS, MOCK_FOLLOW_UPS, generateMockResult } from "@/data/mock
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import { useSpeechSynthesis } from "@/hooks/useSpeechSynthesis";
 import type { InterviewSetup, QuestionAnswer } from "@/store/interview";
+import { generateQuestions, analyzeAnswer, generateResult } from "@/lib/interview-ai";
 
 type Phase =
   | "ready"
@@ -105,32 +106,22 @@ export default function InterviewSessionPage() {
     const jdText = s.jd?.rawText || "";
 
     try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 10000);
-      const res = await fetch("/api/interview/questions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        signal: controller.signal,
-        body: JSON.stringify({
-          company: s.company,
-          position: s.position,
-          interviewTypes: s.interviewTypes,
-          questionCount: s.questionCount,
-          resumeText: resumeText.slice(0, 5000),
-          jdText: jdText.slice(0, 3000),
-          coverLetterText: (s.coverLetterText || "").slice(0, 3000),
-          experienceLevel: s.experienceLevel || "경력",
-          interviewerCount: s.interviewerCount ?? 1,
-          interviewerRole: s.interviewerRole ?? "manager",
-          interviewerGender: s.interviewerGender ?? "random",
-          interviewerMood: s.interviewerMood ?? "standard",
-        }),
+      const data = await generateQuestions({
+        company: s.company,
+        position: s.position,
+        interviewTypes: s.interviewTypes,
+        questionCount: s.questionCount,
+        resumeText: resumeText.slice(0, 5000),
+        jdText: jdText.slice(0, 3000),
+        coverLetterText: (s.coverLetterText || "").slice(0, 3000),
+        experienceLevel: s.experienceLevel || "경력",
+        interviewerCount: s.interviewerCount ?? 1,
+        interviewerRole: s.interviewerRole ?? "manager",
+        interviewerGender: s.interviewerGender ?? "random",
+        interviewerMood: s.interviewerMood ?? "standard",
       });
-      clearTimeout(timeout);
 
-      const data = await res.json();
-
-      if (data.fallback || data.error) throw new Error("API failed");
+      if (!data.questions || data.questions.length === 0) throw new Error("API failed");
 
       const aiQuestions = data.questions.map(
         (q: { question: string; category: string }) => ({
@@ -206,33 +197,21 @@ export default function InterviewSessionPage() {
     let followUpQuestion: string | undefined;
 
     try {
-      const analyzeController = new AbortController();
-      const analyzeTimeout = setTimeout(() => analyzeController.abort(), 10000);
-      const res = await fetch("/api/interview/analyze", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        signal: analyzeController.signal,
-        body: JSON.stringify({
-          question: currentQuestion.q,
-          answer: transcript,
-          category: currentQuestion.cat,
-          company: setup?.company,
-          position: setup?.position,
-          resumeText: loadState("resume")?.rawText?.slice(0, 3000) || "",
-          experienceLevel: setup?.experienceLevel || "경력",
-          interviewerRole: setup?.interviewerRole ?? "manager",
-          interviewerMood: setup?.interviewerMood ?? "standard",
-        }),
+      const data = await analyzeAnswer({
+        question: currentQuestion.q,
+        answer: transcript,
+        category: currentQuestion.cat,
+        company: setup?.company,
+        position: setup?.position,
+        resumeText: loadState("resume")?.rawText?.slice(0, 3000) || "",
+        experienceLevel: setup?.experienceLevel || "경력",
+        interviewerRole: setup?.interviewerRole ?? "manager",
+        interviewerMood: setup?.interviewerMood ?? "standard",
       });
-      clearTimeout(analyzeTimeout);
 
-      const data = await res.json();
-
-      if (!data.error) {
-        aiScore = data.score;
-        aiFeedback = data.feedback;
-        followUpQuestion = data.followUpQuestion || undefined;
-      }
+      aiScore = data.score;
+      aiFeedback = data.feedback;
+      followUpQuestion = data.followUpQuestion || undefined;
     } catch {
       console.warn("AI analysis failed, using defaults");
     }
@@ -319,57 +298,45 @@ export default function InterviewSessionPage() {
     }));
 
     try {
-      const resultController = new AbortController();
-      const resultTimeout = setTimeout(() => resultController.abort(), 10000);
-      const res = await fetch("/api/interview/result", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        signal: resultController.signal,
-        body: JSON.stringify({
-          company: setup?.company,
-          position: setup?.position,
-          qas: qaData,
-        }),
+      const data = await generateResult({
+        company: setup?.company || "",
+        position: setup?.position || "",
+        qas: qaData,
       });
-      clearTimeout(resultTimeout);
 
-      const data = await res.json();
+      // Build full result with QA details
+      const resultQAs: QuestionAnswer[] = qas.map((qa, i) => ({
+        id: i + 1,
+        question: qa.question,
+        answer: qa.transcript || qa.answer,
+        category: qa.category,
+        score: (qa.aiScore ?? 5) * 10,
+        feedback: qa.aiFeedback ?? "",
+        followUp: qa.followUpQ,
+        transcript: qa.transcript,
+        followUpQ: qa.followUpQ,
+        followUpA: qa.followUpA,
+        aiScore: qa.aiScore,
+        aiFeedback: qa.aiFeedback,
+      }));
 
-      if (!data.error) {
-        // Build full result with QA details
-        const resultQAs: QuestionAnswer[] = qas.map((qa, i) => ({
-          id: i + 1,
-          question: qa.question,
-          answer: qa.transcript || qa.answer,
-          category: qa.category,
-          score: (qa.aiScore ?? 5) * 10,
-          feedback: qa.aiFeedback ?? "",
-          followUp: qa.followUpQ,
-          transcript: qa.transcript,
-          followUpQ: qa.followUpQ,
-          followUpA: qa.followUpA,
-          aiScore: qa.aiScore,
-          aiFeedback: qa.aiFeedback,
-        }));
+      const result = {
+        ...data,
+        voiceAnalysis: {
+          confidence: Math.floor(Math.random() * 25) + 55,
+          clarity: Math.floor(Math.random() * 20) + 60,
+          stability: Math.floor(Math.random() * 25) + 50,
+          energy: Math.floor(Math.random() * 20) + 60,
+          wpm: Math.floor(Math.random() * 40) + 140,
+          fillerCount: Math.floor(Math.random() * 10) + 3,
+        },
+        qas: resultQAs,
+      };
 
-        const result = {
-          ...data,
-          voiceAnalysis: {
-            confidence: Math.floor(Math.random() * 25) + 55,
-            clarity: Math.floor(Math.random() * 20) + 60,
-            stability: Math.floor(Math.random() * 25) + 50,
-            energy: Math.floor(Math.random() * 20) + 60,
-            wpm: Math.floor(Math.random() * 40) + 140,
-            fillerCount: Math.floor(Math.random() * 10) + 3,
-          },
-          qas: resultQAs,
-        };
-
-        saveState("result", result);
-        setPhase("done");
-        setTimeout(() => router.push("/interview/result"), 2000);
-        return;
-      }
+      saveState("result", result);
+      setPhase("done");
+      setTimeout(() => router.push("/interview/result"), 2000);
+      return;
     } catch {
       console.warn("AI result generation failed, using mock");
     }

@@ -9,7 +9,6 @@ export interface ResumeData {
 }
 
 export interface JDData {
-  url: string;
   company: string;
   position: string;
   requirements: string[];

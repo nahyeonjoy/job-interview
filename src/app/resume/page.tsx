@@ -4,6 +4,8 @@ import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { saveState } from "@/store/interview";
 import type { ResumeData } from "@/store/interview";
+import { extractPdfText } from "@/lib/pdf-extract";
+import { analyzeResumeText } from "@/lib/interview-ai";
 
 export default function ResumePage() {
   const router = useRouter();
@@ -37,20 +39,14 @@ export default function ResumePage() {
     setError(null);
 
     try {
-      const formData = new FormData();
-      formData.append("file", file);
+      const rawText = await extractPdfText(file);
 
-      const res = await fetch("/api/resume/analyze", {
-        method: "POST",
-        body: formData,
-      });
-
-      const data = await res.json();
-
-      if (data.error) {
-        setError(data.error);
+      if (!rawText || rawText.trim().length < 10) {
+        setError("PDF에서 텍스트를 추출할 수 없습니다. 다른 파일을 시도하세요.");
         return;
       }
+
+      const data = await analyzeResumeText(rawText);
 
       const result: ResumeData = {
         fileName: file.name,
@@ -59,14 +55,18 @@ export default function ResumePage() {
         projects: data.projects || [],
         skills: data.skills || [],
         weakPoints: data.weakPoints || [],
-        rawText: data.rawText || "",
+        rawText: rawText.slice(0, 10000),
       };
 
       setResumeData(result);
       saveState("resume", result);
       setAnalyzed(true);
-    } catch {
-      setError("이력서 분석 중 오류가 발생했습니다. 다시 시도하세요.");
+    } catch (err) {
+      const message =
+        err instanceof Error && err.message.includes("timeout")
+          ? "AI 분석 시간이 초과되었습니다. 다시 시도하세요."
+          : "이력서 분석에 실패했습니다.";
+      setError(message);
     } finally {
       setAnalyzing(false);
     }

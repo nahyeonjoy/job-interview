@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { loadState } from "@/store/interview";
 import type { InterviewResult } from "@/store/interview";
+import { analyzeAnswer } from "@/lib/interview-ai";
 
 interface ChatMessage {
   role: "ai" | "user";
@@ -108,19 +109,14 @@ export default function InterviewResultPage() {
 
     // Try AI response, fall back to local
     try {
-      const res = await fetch("/api/interview/analyze", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          question: `면접 결과에 대한 사용자 질문: "${q}"`,
-          answer: `총점: ${result?.totalScore}, 등급: ${result?.grade}. 사용자가 결과에 대해 추가 질문하고 있습니다.`,
-          category: "feedback",
-          company: "면접이",
-          position: "면접 코치",
-        }),
+      const data = await analyzeAnswer({
+        question: `면접 결과에 대한 사용자 질문: "${q}"`,
+        answer: `총점: ${result?.totalScore}, 등급: ${result?.grade}. 사용자가 결과에 대해 추가 질문하고 있습니다.`,
+        category: "feedback",
+        company: "면접이",
+        position: "면접 코치",
       });
-      const data = await res.json();
-      if (!data.error && data.feedback) {
+      if (data.feedback) {
         setMessages((prev) => [
           ...prev,
           { role: "ai", content: data.feedback, type: "text" },

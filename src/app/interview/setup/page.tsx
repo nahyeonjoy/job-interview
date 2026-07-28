@@ -12,6 +12,8 @@ import {
   INTERVIEWER_MOODS,
 } from "@/data/mock";
 import type { ResumeData, JDData } from "@/store/interview";
+import { extractPdfText } from "@/lib/pdf-extract";
+import { analyzeResumeText, analyzeJdText } from "@/lib/interview-ai";
 
 export default function InterviewSetupPage() {
   const router = useRouter();
@@ -57,7 +59,7 @@ export default function InterviewSetupPage() {
   const [coverLetterUploaded, setCoverLetterUploaded] = useState(false);
 
   // JD states
-  const [jdUrl, setJdUrl] = useState("");
+  const [jdText, setJdText] = useState("");
   const [jdLoading, setJdLoading] = useState(false);
   const [jdData, setJdData] = useState<JDData | null>(null);
   const [jdError, setJdError] = useState<string | null>(null);
@@ -100,21 +102,15 @@ export default function InterviewSetupPage() {
     setResumeAnalyzing(true);
 
     try {
-      const formData = new FormData();
-      formData.append("file", file);
+      const rawText = await extractPdfText(file);
 
-      const res = await fetch("/api/resume/analyze", {
-        method: "POST",
-        body: formData,
-      });
-
-      const data = await res.json();
-
-      if (data.error) {
-        setResumeError(data.error);
+      if (!rawText || rawText.trim().length < 10) {
+        setResumeError("PDF에서 텍스트를 추출할 수 없습니다. 다른 파일을 시도하세요.");
         setResumeAnalyzing(false);
         return;
       }
+
+      const data = await analyzeResumeText(rawText);
 
       const result: ResumeData = {
         fileName: file.name,
@@ -123,13 +119,17 @@ export default function InterviewSetupPage() {
         projects: data.projects || [],
         skills: data.skills || [],
         weakPoints: data.weakPoints || [],
-        rawText: data.rawText || "",
+        rawText: rawText.slice(0, 10000),
       };
 
       setResume(result);
       saveState("resume", result);
-    } catch {
-      setResumeError("이력서 분석 중 오류가 발생했습니다. 다시 시도하세요.");
+    } catch (err) {
+      const message =
+        err instanceof Error && err.message.includes("timeout")
+          ? "AI 분석 시간이 초과되었습니다. 다시 시도하세요."
+          : "이력서 분석에 실패했습니다.";
+      setResumeError(message);
     } finally {
       setResumeAnalyzing(false);
     }
@@ -142,22 +142,14 @@ export default function InterviewSetupPage() {
     setCoverLetterAnalyzing(true);
 
     try {
-      const formData = new FormData();
-      formData.append("file", file);
+      const rawText = await extractPdfText(file);
 
-      const res = await fetch("/api/coverletter/extract", {
-        method: "POST",
-        body: formData,
-      });
-
-      const data = await res.json();
-
-      if (data.error) {
-        setCoverLetterError(data.error);
+      if (!rawText || rawText.trim().length < 10) {
+        setCoverLetterError("PDF에서 텍스트를 추출할 수 없습니다. 다른 파일을 시도하세요.");
         return;
       }
 
-      setCoverLetterText(data.rawText || "");
+      setCoverLetterText(rawText.slice(0, 8000));
       setCoverLetterUploaded(true);
     } catch {
       setCoverLetterError("자기소개서 업로드 중 오류가 발생했습니다. 다시 시도하세요.");
@@ -168,32 +160,27 @@ export default function InterviewSetupPage() {
 
   // JD analyze
   const handleJdAnalyze = async () => {
-    if (!jdUrl.trim()) return;
+    const pasted = jdText.trim();
+    if (!pasted) return;
     setJdLoading(true);
     setJdError(null);
 
     try {
-      const res = await fetch("/api/interview/jd", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: jdUrl.trim() }),
-      });
-
-      const data = await res.json();
-
-      if (data.error) {
-        setJdError(data.error);
+      const rawText = pasted.slice(0, 10000);
+      if (rawText.length < 50) {
+        setJdError("채용공고 텍스트를 더 많이 붙여넣어주세요.");
         return;
       }
 
+      const data = await analyzeJdText(rawText);
+
       const jd: JDData = {
-        url: jdUrl.trim(),
         company: data.company || "",
         position: data.position || "",
         requirements: data.requirements || [],
         preferred: data.preferred || [],
         description: data.description || "",
-        rawText: data.rawText || "",
+        rawText: rawText.slice(0, 5000),
       };
 
       setJdData(jd);
@@ -578,13 +565,13 @@ export default function InterviewSetupPage() {
           )}
         </section>
 
-        {/* JD URL */}
+        {/* JD 텍스트 */}
         <section>
           <label className="block text-sm font-semibold text-gray-900 mb-1">
-            채용 링크 <span className="text-gray-400 font-normal">(선택)</span>
+            채용공고 내용 <span className="text-gray-400 font-normal">(선택)</span>
           </label>
           <p className="text-xs text-gray-400 mb-3">
-            채용공고 URL을 입력하면 JD 기반 맞춤 질문을 생성합니다
+            채용공고 페이지의 텍스트를 붙여넣으면 JD 기반 맞춤 질문을 생성합니다
           </p>
 
           {jdData ? (
@@ -594,12 +581,12 @@ export default function InterviewSetupPage() {
               <span className="text-sm font-medium text-green-900 flex-1 truncate">
                 {jdData.company && jdData.position
                   ? `${jdData.company} · ${jdData.position}`
-                  : jdUrl}
+                  : "채용공고 등록 완료"}
               </span>
               <button
                 onClick={() => {
                   setJdData(null);
-                  setJdUrl("");
+                  setJdText("");
                   setJdError(null);
                 }}
                 className="w-5 h-5 flex items-center justify-center rounded-full bg-green-200 hover:bg-green-300 transition-colors shrink-0"
@@ -611,24 +598,21 @@ export default function InterviewSetupPage() {
             </div>
           ) : (
             /* 입력 상태 */
-            <div className="relative">
-              <input
-                type="url"
-                placeholder="https://careers.example.com/jobs/..."
-                value={jdUrl}
+            <div>
+              <textarea
+                placeholder="채용공고 페이지에서 자격요건/우대사항 등 텍스트를 복사해 붙여넣으세요"
+                value={jdText}
                 onChange={(e) => {
-                  setJdUrl(e.target.value);
+                  setJdText(e.target.value);
                   setJdError(null);
                 }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && jdUrl.trim() && !jdLoading) handleJdAnalyze();
-                }}
-                className="w-full pl-4 pr-20 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
+                rows={5}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm resize-none"
               />
               <button
                 onClick={handleJdAnalyze}
-                disabled={!jdUrl.trim() || jdLoading}
-                className="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-primary text-white text-xs font-medium rounded-lg hover:bg-primary-dark transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                disabled={!jdText.trim() || jdLoading}
+                className="mt-2 px-3 py-1.5 bg-primary text-white text-xs font-medium rounded-lg hover:bg-primary-dark transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {jdLoading ? (
                   <svg className="animate-spin h-3.5 w-3.5" viewBox="0 0 24 24" fill="none">
