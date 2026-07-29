@@ -10,7 +10,7 @@ import { analyzeResumeText } from "@/lib/interview-ai";
 export default function ResumePage() {
     const router = useRouter();
     const [dragOver, setDragOver] = useState(false);
-    const [file, setFile] = useState<File | null>(null);
+    const [file, setFile] = useState<File | null>(null);h
     const [analyzing, setAnalyzing] = useState(false);
     const [analyzed, setAnalyzed] = useState(false);
     const [resumeData, setResumeData] = useState<ResumeData | null>(null);
@@ -130,7 +130,7 @@ export default function ResumePage() {
                                                               className="text-sm text-red-500 hover:text-red-700"
                                                             >
                                                             파일 변경
-                                              </button>button>
+                                              </button>
                                   </div>div>
                                 ) : (
                                   <div className="flex flex-col items-center gap-3">
@@ -185,7 +185,7 @@ export default function ResumePage() {
                                         ) : (
                                           "AI 이력서 분석 시작"
                                         )}
-                  </button>button>
+                  </button>
               )}
         
           {/* Analysis result */}
@@ -292,7 +292,7 @@ export default function ResumePage() {
                                           className="w-full py-4 bg-primary text-white font-semibold rounded-xl hover:bg-primary-dark transition-colors"
                                         >
                                         면접 설정으로 이동
-                            </button>button>
+                            </button>
                   </div>div>
               )}
         </div>div>
